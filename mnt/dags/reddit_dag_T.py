@@ -133,20 +133,38 @@ def _get_daily_summary():
     )
     connection = postgres_hook.get_conn()
     cursor = connection.cursor()
-    
+        
+    # Create table if not exists
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS public.mart_summary_table (
+            summary_id SERIAL PRIMARY KEY,
+            number_of_authors INT,
+            number_of_posts INT,
+            number_of_comments INT,
+            average_score FLOAT,
+            date_of_summary DATE DEFAULT CURRENT_DATE
+        );
+    """)
+
     # Query
     query = """
-        CREATE OR REPLACE VIEW public.mart_summary_view AS
+        INSERT INTO public.mart_summary_table (number_of_authors, number_of_posts, number_of_comments, average_score, date_of_summary)
         SELECT 
             COUNT(DISTINCT author.author_id) AS number_of_authors,
             COUNT(DISTINCT post.post_id) AS number_of_posts,
+            COALESCE(SUM(comment_count), 0) AS number_of_comments,
             AVG(post.post_score) AS average_score,
             CURRENT_DATE AS date_of_summary
         FROM post
-        INNER JOIN author ON post.post_author_id = author.author_id
-        WHERE 
-            DATE(TO_TIMESTAMP(post_created_at)) = CURRENT_DATE;
+        LEFT JOIN author ON post.post_author_id = author.author_id
+        LEFT JOIN (
+            SELECT comment_post_id, COUNT(*) AS comment_count
+            FROM comment
+            GROUP BY comment_post_id
+        ) AS comments ON post.post_id = comments.comment_post_id
+        WHERE DATE(TO_TIMESTAMP(post.post_created_at)) = CURRENT_DATE;
     """
+    
     cursor.execute(query)
     
     connection.commit()
