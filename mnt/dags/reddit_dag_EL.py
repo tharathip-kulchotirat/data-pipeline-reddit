@@ -1,3 +1,7 @@
+# Created: 2024-03-24
+# By: Tharathip Kulchotirat
+# Description: This DAG extracts data from Reddit API, validates the extracted data, and loads the data to Postgres.
+
 from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator

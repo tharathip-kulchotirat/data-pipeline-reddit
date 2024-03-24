@@ -1,3 +1,7 @@
+# Created: 2024-03-24
+# By: Tharathip Kulchotirat
+# Description: This DAG is used to serve data to the data mart for analysis of trends and daily summary of the subreddit.
+
 from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
@@ -96,8 +100,8 @@ def _load_top_300(**context):
                 ROW_NUMBER() OVER (ORDER BY count DESC) AS rank
             FROM (
                 SELECT unnest(ARRAY[%(words)s]) AS word,
-                       unnest(ARRAY[%(counts)s]) AS count,
-                       unnest(ARRAY[%(dates)s]) AS analysis_date
+                        unnest(ARRAY[%(counts)s]) AS count,
+                        unnest(ARRAY[%(dates)s]) AS analysis_date
             ) AS word_counts
         ) AS ranked_words
         WHERE rank <= 300;
