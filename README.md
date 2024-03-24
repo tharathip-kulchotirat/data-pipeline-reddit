@@ -44,7 +44,7 @@ http://localhost:8080
 log in with username: airflow, password: airflow. You will see the 2 DAGs we have created for this project.
 You should set up
 - Reddit API credentials as environment variables in the Airflow UI
-- Database connection as environment variables in the Airflow UI
+- Database connection in the Airflow UI
 
 7. Check out the database with adminer at
 ```bash
