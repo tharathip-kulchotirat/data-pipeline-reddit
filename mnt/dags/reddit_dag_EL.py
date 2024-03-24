@@ -86,45 +86,58 @@ def _load_raw_data_to_postgres(**context):
     connection = postgres_hook.get_conn()
     cursor = connection.cursor()
     
-    # Create tables
-    # 1. Author table: author_id, author_name
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS author (
-        author_id TEXT PRIMARY KEY,
-        author_name TEXT
-    );
-    """)
-    # 2. Post table: post_id, post_title, post_score, post_author_id, post_created_at
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS post (
-        post_id TEXT PRIMARY KEY,
-        post_title TEXT,
-        post_score INT,
-        post_author_id TEXT,
-        post_created_at INT
-    );
-    """)
-    # 3. Comment table: comment_id, comment_body, comment_post_id, comment_author_id, comment_created_at
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS comment (
-        comment_id TEXT PRIMARY KEY,
-        comment_body TEXT,
-        comment_post_id TEXT,
-        comment_author_id TEXT,
-        comment_created_at INT
-    );
-    """)
-    
-    # Insert data
-    cursor.executemany("INSERT INTO author VALUES (%s, %s)", authors)
-    cursor.executemany("INSERT INTO post VALUES (%s, %s, %s, %s, %s)", posts)
-    cursor.executemany("INSERT INTO comment VALUES (%s, %s, %s, %s, %s)", comments)
-    
-    connection.commit()
-    cursor.close()
-    connection.close()
-    
-    print(f"Data loaded to Postgres at {datetime.now()}")
+    try:
+        # Create tables if they don't exist
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS author (
+            author_id TEXT PRIMARY KEY,
+            author_name TEXT
+        );
+        """)
+        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS post (
+            post_id TEXT PRIMARY KEY,
+            post_title TEXT,
+            post_score INT,
+            post_author_id TEXT,
+            post_created_at INT
+        );
+        """)
+        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS comment (
+            comment_id TEXT PRIMARY KEY,
+            comment_body TEXT,
+            comment_post_id TEXT,
+            comment_author_id TEXT,
+            comment_created_at INT
+        );
+        """)
+        
+        # Insert data
+        cursor.executemany("""
+        INSERT INTO author VALUES (%s, %s)
+        ON CONFLICT DO NOTHING;
+        """, authors)
+        
+        cursor.executemany("""
+        INSERT INTO post VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT DO NOTHING;
+        """, posts)
+        
+        cursor.executemany("""
+        INSERT INTO comment VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT DO NOTHING;
+        """, comments)
+        
+        connection.commit()
+        print(f"Data loaded to Postgres at {datetime.now()}")
+    except Exception as e:
+        print(f"Error loading data to Postgres: {e}")
+    finally:
+        cursor.close()
+        connection.close()
 
     
 # DAG Extract, Load
